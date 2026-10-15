@@ -106,7 +106,7 @@ function intro(){app.innerHTML=`<div class="card"><h1>Où perdez-vous le plus de
 function ownerLink(){if(user&&user.isOwner&&user.isOwner()){const p=$("#own");if(p){p.innerHTML='Vous êtes l\'auteur : <a href="#" id="res">voir les résultats</a>';$("#res").onclick=e=>{e.preventDefault();results()}}}}
 const payload=()=>({answers:A,secteur:A.q1||"",taille:A.q2||"",ts:new Date().toISOString(),sec:Math.round((Date.now()-t0)/1000)});
 let saved=null;
-const ENDPOINT="COLLE_ICI_L_URL_DE_TON_APPS_SCRIPT";
+const ENDPOINT="https://script.google.com/macros/s/AKfycbyVH1FFAt0JMsNNVjaHKSEyTbRbRIl-dKLXparmRwXy2IUZMaJLnHIhlkLYfijC1aJE4w/exec";
 async function submit(){done=true;saved="pending";
  try{if(!ENDPOINT.startsWith("https://"))throw 0;
   await fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload())});saved="ok"}catch(e){saved="fail"}
