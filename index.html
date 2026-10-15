@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VEY · Où perdez-vous le plus de temps dans votre PME ?</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#fdf6ee;--card:#fffdfa;--tx:#2b2019;--mu:#7a6a5e;--ac:#c2410c;--acx:#fff;--bd:#ead9c7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1613;--card:#271f1a;--tx:#f6ede4;--mu:#b5a597;--ac:#f08a5d;--acx:#2a1208;--bd:#43372f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1613;--card:#271f1a;--tx:#f6ede4;--mu:#b5a597;--ac:#f08a5d;--acx:#2a1208;--bd:#43372f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.5 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+.bar{height:6px;background:var(--bd);border-radius:3px;margin:8px 0 24px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ac);transition:width .3s}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:22px}
+.tag{color:var(--mu);font-size:14px;margin:0 0 6px}
+h1{font-size:24px;line-height:1.25;margin:0 0 12px}h2{font-size:21px;line-height:1.3;margin:0 0 6px}
+.hint{color:var(--mu);font-size:15px;margin:0 0 16px}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:10px;align-items:center;text-align:left;width:100%;padding:12px 14px;border:1px solid var(--bd);border-radius:10px;background:transparent;color:var(--tx);font:inherit;cursor:pointer}
+.opt.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent);font-weight:600}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.scale{display:flex;gap:8px}.scale .opt{justify-content:center;padding:14px 0}
+.lbls{display:flex;justify-content:space-between;color:var(--mu);font-size:13px;margin-top:6px}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:110px;resize:vertical}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:20px}
+button.p,button.s{padding:12px 22px;border-radius:10px;font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--ac)}
+button.p{background:var(--ac);color:var(--acx)}button.s{background:transparent;color:var(--ac)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.err{color:#c0392b;font-size:14px;margin-top:8px;min-height:18px}
+.small{font-size:14px;color:var(--mu)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:22px;letter-spacing:.12em;color:var(--ac)}
+.brand span{font-size:13px;font-weight:400;letter-spacing:0;color:var(--mu)}
+.card{box-shadow:0 6px 24px rgba(194,65,12,.08)}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left}
+.wrap{overflow-x:auto}
+</style></head><body><main>
+<div class="brand">VEY<span>Enquête auprès des PME</span></div>
+<div class="bar"><i id="pg" style="width:0"></i></div>
+<div id="app"></div>
+</main>
+<script>
+const DOMAINS=["Facturation et relances clients","Trésorerie et suivi financier","Comptabilité et paperasse administrative","Recrutement","Gestion du personnel (paie, plannings, absences)","Formation","Trouver de nouveaux clients","Suivi et fidélisation des clients","Marketing et communication","Gestion de projets / planning","Achats et fournisseurs","Gestion des stocks","Juridique et contrats","Conformité et réglementation","Informatique et cybersécurité","Autre (précisez)"];
+const REGIONS=["Auvergne-Rhône-Alpes","Bourgogne-Franche-Comté","Bretagne","Centre-Val de Loire","Corse","Grand Est","Hauts-de-France","Île-de-France","Normandie","Nouvelle-Aquitaine","Occitanie","Pays de la Loire","Provence-Alpes-Côte d'Azur","Outre-mer","Hors de France"];
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const D5=[...shuffle(DOMAINS.slice(0,15)),DOMAINS[15],"Aucun de ceux-là"];
+const A={};let idx=0,steps=[],t0=Date.now(),db=null,user=null,done=false,mode="survey";
+const base=[
+{id:"q1",bloc:"Votre entreprise",t:"Dans quel secteur travaille votre entreprise ?",k:"one",o:["Commerce / distribution","Services aux entreprises","BTP / artisanat","Industrie","Hôtellerie-restauration","Santé / bien-être","Transport / logistique","Numérique / tech","Autre"]},
+{id:"q2",bloc:"Votre entreprise",t:"Combien de personnes travaillent dans votre entreprise, vous compris ?",k:"one",o:["1 à 4","5 à 9","10 à 19","20 à 49","50 à 249"]},
+{id:"q3",bloc:"Votre entreprise",t:"Quelle est votre fonction ?",k:"one",o:["Dirigeant / gérant","Responsable administratif et financier","Responsable RH","Responsable des opérations","Autre"]},
+{id:"q4",bloc:"Votre entreprise",t:"Dans quelle région êtes-vous basé ?",k:"sel",o:REGIONS},
+{id:"q5",bloc:"Où part votre temps",t:"Quels domaines vous prennent le plus de temps ou vous causent le plus de soucis ?",h:"Choisissez-en 3 maximum. Le premier que vous cochez sera approfondi en priorité.",k:"multi",max:3,o:D5,excl:"Aucun de ceux-là"}];
+const tail=[
+{id:"q14",bloc:"Vos priorités",t:"Quelle tâche aimeriez-vous ne plus jamais avoir à faire ?",k:"text",opt:1},
+{id:"q15",bloc:"Vos priorités",t:"Si un seul de vos problèmes disparaissait demain, lequel vous ferait gagner le plus d'argent ou de temps ?",k:"text",opt:1},
+{id:"q16",bloc:"Pour aller plus loin",t:"Souhaitez-vous recevoir les résultats de l'enquête ?",h:"Facultatif. Laissez votre email, sinon passez.",k:"email",opt:1},
+{id:"q17",bloc:"Pour aller plus loin",t:"Seriez-vous d'accord pour un échange de 20 minutes afin d'approfondir vos réponses ?",h:"Facultatif. Laissez un email ou un numéro de téléphone.",k:"email",opt:1,ph:"Email ou téléphone",raw:1}];
+function dom(d,n){const p=`${d}__`;const L=` (${n}/2)`;const b="À propos de : "+d;return[
+{id:p+"q6",bloc:b,t:"À quel point ce sujet est-il un problème pour vous ?",k:"scale",lo:"Pas du tout",hi:"Un vrai problème"},
+{id:p+"q7",bloc:b,t:"Combien de temps y consacrez-vous, vous et votre équipe, par semaine ?",k:"one",o:["Moins de 2 h","2 à 5 h","5 à 10 h","10 à 20 h","Plus de 20 h","Je ne sais pas"]},
+{id:p+"q8",bloc:b,t:"Quelles sont les conséquences quand ça se passe mal ?",k:"multi",o:["Perte de temps","Perte d'argent","Retards de paiement","Clients mécontents","Stress / charge mentale","Erreurs ou pénalités","Opportunités manquées","Aucune conséquence notable","Autre"]},
+{id:p+"q9",bloc:b,t:"Comment gérez-vous ce sujet actuellement ?",k:"one",o:["Je m'en occupe moi-même","Un salarié s'en occupe","Un prestataire externe","Un logiciel ou une application","Excel, papier ou outils bricolés","Ce n'est pas vraiment géré"]},
+{id:p+"q10",bloc:b,t:"Combien dépensez-vous par mois pour ce sujet ?",h:"Logiciel, prestataire, salaire dédié, intérim.",k:"one",o:["0 €","Moins de 100 €","100 à 300 €","300 à 1 000 €","1 000 à 3 000 €","Plus de 3 000 €","Je ne sais pas"]},
+{id:p+"q11",bloc:b,t:"Êtes-vous satisfait de la solution actuelle ?",k:"scale",lo:"Pas du tout",hi:"Tout à fait"},
+{id:p+"q12",bloc:b,t:"Qu'est-ce qui ne fonctionne pas, ou que changeriez-vous ?",k:"text",opt:1},
+{id:p+"q13",bloc:b,t:"Au cours des 12 derniers mois, avez-vous cherché ou changé de solution pour ce sujet ?",k:"one",o:["Oui, j'ai changé","Oui, j'ai cherché sans changer","Non, je n'y ai pas pensé","Non, je suis satisfait"]}]}
+function build(){const sel=(A.q5||[]).filter(x=>x!=="Aucun de ceux-là").slice(0,2);
+ let d=[];sel.forEach((x,i)=>d.push(...dom(x,i+1)));steps=[{id:"intro",k:"intro"},...base,...d,...tail,{id:"end",k:"end"}]}
+const $=s=>document.querySelector(s),app=$("#app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function valid(s){const v=A[s.id];if(s.opt)return true;if(s.k==="multi")return v&&v.length>0;return v!==undefined&&v!==""&&v!==null}
+function render(){build();const s=steps[idx];const n=steps.length-2;
+ $("#pg").style.width=Math.min(100,Math.max(0,(idx-1)/Math.max(1,n-1)*100))+"%";
+ if(s.k==="intro")return intro();if(s.k==="end")return end();
+ let h=`<div class="card"><p class="tag">${esc(s.bloc)}</p><h2>${esc(s.t)}</h2>${s.h?`<p class="hint">${esc(s.h)}</p>`:'<p class="hint"></p>'}`;
+ const v=A[s.id];
+ if(s.k==="one"||s.k==="multi"){h+='<div class="opts">';s.o.forEach((o,i)=>{const on=s.k==="one"?v===o:(v||[]).includes(o);
+  const dis=s.k==="multi"&&s.max&&!on&&(v||[]).length>=s.max;h+=`<button class="opt${on?" on":""}" data-i="${i}" ${dis?"disabled":""}>${esc(o)}</button>`});h+="</div>"}
+ else if(s.k==="sel"){h+=`<select id="in"><option value="">Choisir…</option>${s.o.map(o=>`<option${v===o?" selected":""}>${esc(o)}</option>`).join("")}</select>`}
+ else if(s.k==="scale"){h+='<div class="scale">'+[1,2,3,4,5].map(i=>`<button class="opt${v===i?" on":""}" data-n="${i}">${i}</button>`).join("")+`</div><div class="lbls"><span>${s.lo}</span><span>${s.hi}</span></div>`}
+ else if(s.k==="text"){h+=`<textarea id="in" placeholder="Votre réponse (facultatif)">${esc(v||"")}</textarea>`}
+ else if(s.k==="email"){h+=`<input id="in" ${s.raw?"":'type="email"'} placeholder="${s.ph||"vous@entreprise.fr"}" value="${esc(v||"")}">`}
+ h+=`<div class="err" id="err"></div><div class="nav"><button class="s" id="bk">Retour</button><button class="p" id="nx">${s.opt&&!A[s.id]?"Passer":"Suivant"}</button></div></div>`;
+ app.innerHTML=h;
+ app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+  if(s.k==="scale"){A[s.id]=+b.dataset.n}
+  else{const o=s.o[+b.dataset.i];
+   if(s.k==="one"){A[s.id]=o;}
+   else{let a=A[s.id]||[];if(a.includes(o))a=a.filter(x=>x!==o);else{if(s.excl&&o===s.excl)a=[o];else{a=a.filter(x=>x!==s.excl);a.push(o)}}A[s.id]=a}}
+  if(s.k==="one"||s.k==="scale"){go(1,true)}else render()});
+ const inp=$("#in");if(inp){inp.oninput=()=>{A[s.id]=inp.value;const nx=$("#nx");if(s.opt)nx.textContent=inp.value?"Suivant":"Passer"};inp.onchange=inp.oninput}
+ $("#bk").onclick=()=>go(-1);$("#nx").onclick=()=>go(1);$("#bk").disabled=idx<=1&&false;
+ const ik=s.id;window.scrollTo(0,0)}
+function go(d,auto){const s=steps[idx];
+ if(d>0){if(!valid(s)){if(!auto)$("#err").textContent="Merci de répondre pour continuer.";return}
+  if(s.k==="email"&&A[s.id]&&!s.raw&&!/^\S+@\S+\.\S+$/.test(A[s.id])){$("#err").textContent="Adresse email invalide.";return}
+  if(s.id==="q5"&&(A.q5||[]).includes("Autre (précisez)")&&!A.q5_autre){const t=prompt("Précisez le domaine :");if(t)A.q5_autre=t}}
+ idx=Math.max(0,Math.min(steps.length-1,idx+d));
+ if(steps[idx].k==="end"&&!done){submit()}
+ render()}
+function intro(){app.innerHTML=`<div class="card"><h1>Où perdez-vous le plus de temps dans votre entreprise ?</h1><p>Nous sommes deux associés derrière VEY et nous menons cette enquête pour mieux comprendre le quotidien des dirigeants et responsables de PME. Elle dure entre 8 et 10 minutes et reste anonyme, sauf si vous choisissez de laisser votre email à la fin.</p><p>En échange de votre temps, vous recevrez les résultats : un comparatif des principales difficultés des PME de votre taille et de votre secteur.</p><div class="nav" style="justify-content:flex-end"><button class="p" id="st">Commencer</button></div><p class="small" id="own"></p></div>`;
+ $("#st").onclick=()=>{idx=1;render()};ownerLink()}
+function ownerLink(){if(user&&user.isOwner&&user.isOwner()){const p=$("#own");if(p){p.innerHTML='Vous êtes l\'auteur : <a href="#" id="res">voir les résultats</a>';$("#res").onclick=e=>{e.preventDefault();results()}}}}
+const payload=()=>({answers:A,secteur:A.q1||"",taille:A.q2||"",ts:new Date().toISOString(),sec:Math.round((Date.now()-t0)/1000)});
+let saved=null;
+const ENDPOINT="COLLE_ICI_L_URL_DE_TON_APPS_SCRIPT";
+async function submit(){done=true;saved="pending";
+ try{if(!ENDPOINT.startsWith("https://"))throw 0;
+  await fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload())});saved="ok"}catch(e){saved="fail"}
+ if(steps[idx]&&steps[idx].k==="end")render()}
+function end(){$("#pg").style.width="100%";const ok=saved==="ok",pend=saved==="pending";
+ app.innerHTML=`<div class="card"><h1>${pend?"Envoi en cours…":"Merci pour votre temps !"}</h1>`+
+ (ok?"<p>Vos réponses ont bien été enregistrées. Mon associé et moi vous remercions sincèrement."+(A.q16?" Vous recevrez les résultats à l'adresse indiquée.":"")+"</p>":
+ pend?"":`<p>Vos réponses n'ont pas pu être enregistrées automatiquement. Vous pouvez les envoyer à l'auteur de l'enquête en copiant le texte ci-dessous.</p><textarea id="cp" readonly>${esc(JSON.stringify(payload()))}</textarea><div class="nav"><button class="p" id="cb">Copier mes réponses</button></div>`)+
+ `<p class="small" id="own"></p></div>`;
+ const cb=$("#cb");if(cb)cb.onclick=()=>{$("#cp").select();try{navigator.clipboard.writeText($("#cp").value)}catch(e){document.execCommand("copy")}cb.textContent="Copié"};ownerLink()}
+async function results(){mode="res";$("#pg").style.width="100%";app.innerHTML='<div class="card">Chargement…</div>';
+ let rows=[];try{const s=await db.collection("responses").get();rows=s.docs.map(d=>d.data())}catch(e){app.innerHTML='<div class="card">Impossible de lire les réponses.</div>';return}
+ const cnt={},sc={},sp={};
+ rows.forEach(r=>{const a=r.answers||{};Object.keys(a).forEach(k=>{const m=k.match(/^(.*)__q(6|10|11)$/);if(!m)return;const d=m[1];sc[d]=sc[d]||{n:0,q6:0,q11:0,q10:[]};const c=sc[d];
+  if(m[2]==="6"){c.n++;c.q6+=a[k]}else if(m[2]==="11")c.q11+=a[k];else c.q10.push(a[k])});
+  (a.q5||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1)});
+ const tr=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).map(d=>{const c=sc[d];const pay=c?Math.round(c.q10.filter(x=>x!=="0 €"&&x!=="Je ne sais pas").length/Math.max(1,c.q10.length)*100)+" %":"–";
+  return`<tr><td>${esc(d)}</td><td>${cnt[d]} (${Math.round(cnt[d]/rows.length*100)} %)</td><td>${c?(c.q6/c.n).toFixed(1):"–"}</td><td>${pay}</td><td>${c?(c.q11/c.n).toFixed(1):"–"}</td></tr>`}).join("");
+ app.innerHTML=`<div class="card"><h2>Résultats : ${rows.length} réponse(s)</h2><p class="hint">Un domaine cité souvent, jugé pénible, déjà payé et peu satisfaisant est un bon candidat d'offre.</p><div class="wrap"><table><tr><th>Domaine</th><th>Cités</th><th>Intensité /5</th><th>Déjà payé</th><th>Satisf. /5</th></tr>${tr||'<tr><td colspan="5">Aucune réponse pour l\'instant.</td></tr>'}</table></div><div class="nav"><button class="s" id="bk2">Retour</button><button class="p" id="dl">Télécharger (JSON)</button></div></div>`;
+ $("#bk2").onclick=()=>{mode="survey";idx=0;render()};
+ $("#dl").onclick=async()=>{try{const d=await claude.use("downloads");if(d)await d.save({filename:"reponses-enquete-pme.json",data:JSON.stringify(rows,null,2)})}catch(e){}}}
+render();
+(async()=>{try{if(window.claude){db=await claude.use("db");user=await claude.use("user");const o=$("#own");ownerLink()}}catch(e){}})();
+</script></body></html>
